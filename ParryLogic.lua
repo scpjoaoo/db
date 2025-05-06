@@ -1,81 +1,82 @@
 -- ParryLogic.lua
--- Responsável pela detecção da bola e execução do parry baseado em hitbox
+local ParryLogic = {}
 
-local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
+local active = true
+local sphere = nil
+local player = nil
+local radius = 15
+local transparency = 1
+local trackedBall = nil
 
-local ParryLogic = {}
-ParryLogic.enabled = true
-local hitboxRadius = 14 -- raio da esfera invisível
-local connection
-
--- Cria esfera invisível
-local hitbox = Instance.new("Part")
-hitbox.Name = "AutoParryHitbox"
-hitbox.Shape = Enum.PartType.Ball
-hitbox.Size = Vector3.new(hitboxRadius * 2, hitboxRadius * 2, hitboxRadius * 2)
-hitbox.Anchored = true
-hitbox.CanCollide = false
-hitbox.Transparency = 1
-hitbox.Material = Enum.Material.ForceField
-hitbox.Color = Color3.fromRGB(255, 100, 100)
-hitbox.Parent = workspace
-
--- Atualiza transparência
-function ParryLogic:SetTransparency(value)
-    hitbox.Transparency = value
+function ParryLogic:Init(localPlayer, initialTransparency)
+    player = localPlayer
+    transparency = initialTransparency or 1
+    self:CreateSphere()
+    self:MonitorBall()
+    self:BindToggleKey()
 end
 
--- Detecta bolas com DeflectParticles
-local function isBall(part)
-    return part:IsA("BasePart") and part.Name == "Part" and part:FindFirstChild("DeflectParticles")
+function ParryLogic:CreateSphere()
+    if sphere then sphere:Destroy() end
+    sphere = Instance.new("Part")
+    sphere.Anchored = true
+    sphere.CanCollide = false
+    sphere.Shape = Enum.PartType.Ball
+    sphere.Material = Enum.Material.ForceField
+    sphere.Color = Color3.fromRGB(0, 255, 255)
+    sphere.Transparency = transparency
+    sphere.Size = Vector3.new(radius * 2, radius * 2, radius * 2)
+    sphere.Name = "ParryHitbox"
+    sphere.Parent = workspace
 end
 
--- Simula tecla F
-local function simulateParry()
-    local VirtualInputManager = game:GetService("VirtualInputManager")
-    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
-    task.wait(0.05)
-    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
-end
+function ParryLogic:MonitorBall()
+    RunService.Heartbeat:Connect(function()
+        if not active or not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
 
--- Verifica toque da esfera
-local function checkHit()
-    for _, obj in ipairs(workspace:GetDescendants()) do
-        if isBall(obj) and (obj.Position - hrp.Position).Magnitude <= hitboxRadius then
-            simulateParry()
+        sphere.CFrame = player.Character.HumanoidRootPart.CFrame
+
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("BasePart") and obj.Name == "Part" and obj:FindFirstChild("DeflectParticles") then
+                if (obj.Position - sphere.Position).Magnitude <= radius then
+                    self:TriggerParry()
+                end
+            end
         end
+    end)
+end
+
+function ParryLogic:TriggerParry()
+    keypress(Enum.KeyCode.F)
+    wait()
+    keyrelease(Enum.KeyCode.F)
+end
+
+function ParryLogic:SetTransparency(value)
+    transparency = value
+    if sphere then
+        sphere.Transparency = transparency
     end
 end
 
--- Loop principal
-connection = RunService.Heartbeat:Connect(function()
-    if not ParryLogic.enabled then return end
+function ParryLogic:SetEnabled(state)
+    active = state
+end
 
-    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        hrp = player.Character.HumanoidRootPart
-        hitbox.Position = hrp.Position
-        checkHit()
-    end
-end)
+function ParryLogic:IsEnabled()
+    return active
+end
 
--- Tecla G ativa/desativa
-UserInputService.InputBegan:Connect(function(input, processed)
-    if processed then return end
-    if input.KeyCode == Enum.KeyCode.G then
-        ParryLogic.enabled = not ParryLogic.enabled
-    end
-end)
-
--- Finalizador
-function ParryLogic:Unload()
-    if connection then connection:Disconnect() end
-    if hitbox then hitbox:Destroy() end
+function ParryLogic:BindToggleKey()
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        if input.KeyCode == Enum.KeyCode.G then
+            self:SetEnabled(not self:IsEnabled())
+        end
+    end)
 end
 
 return ParryLogic
