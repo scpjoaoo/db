@@ -10,8 +10,8 @@ Estrutura de pastas:
 
 -- Main.lua
 -- Arquivo principal (ponto de entrada)
-local Gui = loadstring(game:HttpsGet("https://raw.githubusercontent.com/scpjoaoo/db/refs/heads/main/GuiModule.lua"))()
-local ParryLogic = loadstring(game:HttpsGet("https://raw.githubusercontent.com/scpjoaoo/db/refs/heads/main/ParryLogic.lua"))()
+local Gui = loadstring(game:HttpGet("https://raw.githubusercontent.com/scpjoaoo/db/refs/heads/main/GuiModule.lua"))()
+local ParryLogic = loadstring(game:HttpGet("https://raw.githubusercontent.com/scpjoaoo/db/refs/heads/main/ParryLogic.lua"))()
 GuiModule:Init(ParryLogic)
 
 -- O script se manterá vivo pois RunService.Heartbeat está vinculado na lógica de parry
