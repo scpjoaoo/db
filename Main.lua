@@ -10,9 +10,8 @@ Estrutura de pastas:
 
 -- Main.lua
 -- Arquivo principal (ponto de entrada)
-local Gui = loadstring(readfile("AutoParryProject/GuiModule.lua"))()
-local ParryLogic = loadstring(readfile("AutoParryProject/ParryLogic.lua"))()
-
+local Gui = loadstring(game:HttpsGet("https://raw.githubusercontent.com/scpjoaoo/db/refs/heads/main/GuiModule.lua"))()
+local ParryLogic = loadstring(game:HttpsGet("https://raw.githubusercontent.com/scpjoaoo/db/refs/heads/main/ParryLogic.lua"))()
 Gui:Init(ParryLogic)
 ParryLogic:Start()
 
